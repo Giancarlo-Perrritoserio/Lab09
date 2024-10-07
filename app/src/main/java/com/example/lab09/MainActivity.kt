@@ -21,17 +21,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.lab09.ui.theme.Lab09Theme
+import com.example.lab09.viewmodel.PostViewModel
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -40,9 +40,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Lab09Theme {
-                }
-            }
+            ProgPrincipal9() // Cambia aquí para pasar el ViewModel
         }
     }
 }
@@ -53,14 +51,19 @@ fun ProgPrincipal9() {
     val retrofit = Retrofit.Builder().baseUrl(urlBase)
         .addConverterFactory(GsonConverterFactory.create()).build()
     val servicio = retrofit.create(PostApiService::class.java)
+
+    // Crea una instancia del ViewModel aquí
+    val postViewModel = remember { PostViewModel(servicio) }
+
     val navController = rememberNavController()
 
     Scaffold(
-        topBar =    { BarraSuperior() },
+        topBar = { BarraSuperior() },
         bottomBar = { BarraInferior(navController) },
-        content =   { paddingValues -> Contenido(paddingValues, navController, servicio) }
+        content = { paddingValues -> Contenido(paddingValues, navController, postViewModel) }
     )
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +106,7 @@ fun BarraInferior(navController: NavHostController) {
 fun Contenido(
     pv: PaddingValues,
     navController: NavHostController,
-    servicio: PostApiService
+    viewModel: PostViewModel // Asegúrate de que este es el PostViewModel
 ) {
     Box(
         modifier = Modifier
@@ -114,18 +117,20 @@ fun Contenido(
             navController = navController,
             startDestination = "inicio" // Ruta de inicio
         ) {
-            composable("inicio") { ScreenInicio() }
-
-            composable("posts") { ScreenPosts(navController, servicio) }
+            composable("inicio") { ScreenInicio(viewModel) }
+            composable("posts") { ScreenPosts(navController, viewModel) }
             composable("postsVer/{id}", arguments = listOf(
-                navArgument("id") { type = NavType.IntType} )
-            ) {
-                ScreenPost(navController, servicio, it.arguments!!.getInt("id"))
+                navArgument("id") { type = NavType.IntType }
+            )) {
+                val postId = it.arguments!!.getInt("id")
+                ScreenPost(navController, viewModel, postId)
             }
         }
     }
 }
+
 @Composable
-fun ScreenInicio() {
+fun ScreenInicio(viewModel: PostViewModel) {
     Text("INICIO")
+    // Aquí puedes agregar más lógica o contenido que necesite el ViewModel
 }
